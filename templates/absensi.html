@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi - Face Recognition</title>
+    <link rel="stylesheet" href="/static/css/absensi.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>🔍 Sistem Absensi Face Recognition</h1>
+        <p>Silakan posisikan wajah di dalam frame untuk melakukan absensi</p>
+    </div>
+
+    <div class="container">
+        <div class="info-cards">
+            <div class="info-card">
+                <h3>⏰ Waktu Saat Ini</h3>
+                <div id="current-time" class="time-display">--:--:--</div>
+            </div>
+            
+            <div class="info-card">
+                <h3>⏱️ Batas Masuk</h3>
+                <div class="limit-time">08:00 WIB</div>
+            </div>
+            
+            <div class="info-card">
+                <h3>📍 Lokasi</h3>
+                <div id="location" class="location-text">Mendeteksi lokasi...</div>
+            </div>
+        </div>
+
+        <div class="camera-section">
+            <h3 style="text-align: center; color: #333; margin-bottom: 1.5rem;">Kamera Absensi</h3>
+            <div class="camera-container">
+                <div class="video-container">
+                    <video id="video" width="640" height="480" autoplay></video>
+                    <div class="camera-overlay"></div>
+                    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <button id="startCamera" class="btn btn-primary">📹 Mulai Kamera</button>
+                    <button id="absenBtn" class="btn btn-success" disabled>✅ Absen Sekarang</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <div id="loading" class="loading">
+                <div class="loading-spinner"></div>
+                <p><strong>Memproses absensi...</strong></p>
+                <p>Mohon tunggu sebentar</p>
+            </div>
+
+            <div id="status" class="status-message"></div>
+        </div>
+
+        <div class="back-link">
+            <a href="/admin/dashboard" class="btn btn-secondary">👮‍♂️ Login Admin</a>
+        </div>
+    </div>
+
+    <script>
+        // Inisialisasi elemen video, canvas, dan context untuk kamera
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let currentLocation = 'Unknown';
+        
+        // Fungsi untuk update waktu saat ini setiap detik
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('id-ID');
+            document.getElementById('current-time').textContent = timeString;
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Fungsi untuk mendapatkan lokasi pengguna menggunakan Geolocation API
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // Jika lokasi berhasil didapatkan, update currentLocation dan tampilkan di UI
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        currentLocation = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                        document.getElementById('location').textContent = currentLocation;
+                    },
+                    function(error) {
+                        // Jika gagal mendapatkan lokasi, tampilkan pesan error
+                        currentLocation = 'Lokasi tidak terdeteksi';
+                        document.getElementById('location').textContent = currentLocation;
+                    }
+                );
+            }
+        }
+
+        
+        document.getElementById('startCamera').addEventListener('click', async function() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                video.srcObject = stream;
+                
+                video.addEventListener('loadedmetadata', () => {
+                    document.getElementById('absenBtn').disabled = false;
+                    this.textContent = '📹 Kamera Aktif';
+                    this.disabled = true;
+                    showStatus('✅ Kamera berhasil diaktifkan. Silakan posisikan wajah di dalam frame dan klik "Absen Sekarang"', 'info');
+                });
+                
+                getLocation();
+                
+            } catch (err) {
+                showStatus('❌ Error: Tidak dapat mengakses kamera. ' + err.message, 'error');
+            }
+        });
+
+        
+        document.getElementById('absenBtn').addEventListener('click', async function() {
+            document.getElementById('loading').classList.add('show');
+            this.disabled = true;
+            
+            try {
+                
+                ctx.drawImage(video, 0, 0, 640, 480);
+                
+                
+                canvas.toBlob(async function(blob) {
+                    const formData = new FormData();
+                    formData.append('image', blob, 'absen.jpg');
+                    formData.append('location', currentLocation);
+
+                    const response = await fetch('/absen-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    document.getElementById('loading').classList.remove('show');
+                    
+                    if (response.ok) {
+                        const statusClass = result.status === 'Tepat Waktu' ? 'success' : 'info';
+                        showStatus(`🎉 ${result.message} - Status: ${result.status}`, statusClass);
+                        
+                        
+                        document.getElementById('absenBtn').textContent = '✅ Sudah Absen';
+                        document.getElementById('absenBtn').disabled = true;
+                    } else {
+                        showStatus(`❌ ${result.message}`, 'error');
+                        document.getElementById('absenBtn').disabled = false;
+                    }
+
+                }, 'image/jpeg', 0.8);
+
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message, 'error');
+                document.getElementById('loading').classList.remove('show');
+                this.disabled = false;
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status-message status-${type} show`;
+        }
+
+        
+        getLocation();
+    </script>
+</body>
+</html>

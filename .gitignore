@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.sqlite3
+*.db
+
+# Flask instance folder
+instance/
+*.log
+
+# Static/media/uploads
+/static/uploads/
+*.bak
+
+# Node/npm (if any frontend build)
+node_modules/
+dist/
+build/
+
+# Environment variables
+.env
+.env.*
+
+# Misc
+*.swp
+
+config.yml

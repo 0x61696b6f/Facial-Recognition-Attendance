@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Karyawan - Sistem Absensi</title>
+    <link rel="stylesheet" href="/static/css/tambah_karyawan.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h2>Edit Data Karyawan</h2>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-card">
+            <form action="/admin/edit/{{ karyawan.id }}" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap</label>
+                    <input type="text" id="nama" name="nama" required placeholder="Masukkan nama lengkap karyawan" value="{{ karyawan.nama }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nik">NIK (Nomor Induk Karyawan)</label>
+                    <input type="text" id="nik" name="nik" required placeholder="Masukkan NIK karyawan" value="{{ karyawan.nik }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Foto Wajah Karyawan (Opsional)</label>
+                    <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+                        Kosongkan jika tidak ingin mengubah data wajah, atau upload 3 foto baru untuk mengganti data wajah
+                    </p>
+                    
+                    <div class="photo-grid">
+                        <div class="photo-item">
+                            <h4>Foto Wajah 1</h4>
+                            <div class="file-input-container">
+                                <input type="file" name="face1" class="file-input" accept="image/*" onchange="updateFileLabel(this, 1)">
+                                <div class="file-input-label" id="label1">
+                                    <div>
+                                        <div class="file-icon">📷</div>
+                                        <div class="file-text">Klik untuk upload foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-item">
+                            <h4>Foto Wajah 2</h4>
+                            <div class="file-input-container">
+                                <input type="file" name="face2" class="file-input" accept="image/*" onchange="updateFileLabel(this, 2)">
+                                <div class="file-input-label" id="label2">
+                                    <div>
+                                        <div class="file-icon">📷</div>
+                                        <div class="file-text">Klik untuk upload foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-item">
+                            <h4>Foto Wajah 3</h4>
+                            <div class="file-input-container">
+                                <input type="file" name="face3" class="file-input" accept="image/*" onchange="updateFileLabel(this, 3)">
+                                <div class="file-input-label" id="label3">
+                                    <div>
+                                        <div class="file-icon">📷</div>
+                                        <div class="file-text">Klik untuk upload foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="/admin/dashboard" class="btn btn-secondary">Batal</a>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function updateFileLabel(input, number) {
+            const label = document.getElementById(`label${number}`);
+            const fileName = input.files[0]?.name;
+            
+            if (fileName) {
+                label.classList.add('has-file');
+                label.innerHTML = `
+                    <div>
+                        <div class="file-icon">✅</div>
+                        <div class="file-text">${fileName}</div>
+                    </div>
+                `;
+            } else {
+                label.classList.remove('has-file');
+                label.innerHTML = `
+                    <div>
+                        <div class="file-icon">📷</div>
+                        <div class="file-text">Klik untuk upload foto</div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

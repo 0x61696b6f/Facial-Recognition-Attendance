@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+passlib[bcrypt]
+python-multipart
+jinja2
+insightface
+opencv-python
+pillow
+numpy
+python-jose[cryptography]
+python-dotenv
+requests

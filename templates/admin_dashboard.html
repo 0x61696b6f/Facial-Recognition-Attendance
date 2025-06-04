@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Sistem Absensi</title>
+    <link rel="stylesheet" href="/static/css/admin_dashboard.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-info">
+                <h2>Dashboard Admin</h2>
+                <p>Selamat datang, <strong>{{ username }}</strong>!</p>
+            </div>
+            <div>
+                <form method="post" action="/admin/logout">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-actions">
+            <a href="/admin/tambah" class="action-btn">+ Tambah Karyawan</a>
+            <a href="/admin/laporan" class="action-btn report-btn">📊 Laporan Absensi</a>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Daftar Karyawan</h3>
+            </div>
+            
+            {% if karyawans %}
+            <div class="table-container">
+                <table class="employee-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>NIK</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for karyawan in karyawans %}
+                        <tr>
+                            <td>{{ karyawan.id }}</td>
+                            <td>{{ karyawan.nama }}</td>
+                            <td>{{ karyawan.nik }}</td>
+                            <td>
+                                <a href="/admin/edit/{{ karyawan.id }}" class="edit-btn">Edit</a>
+                                <form
+                                    method="post"
+                                    action="/admin/hapus/{{ karyawan.id }}"
+                                    style="display: inline"
+                                    onsubmit="return confirm('Yakin ingin menghapus karyawan ini?')"
+                                >
+                                    <button type="submit" class="delete-btn">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div>👥</div>
+                <h4>Belum ada karyawan</h4>
+                <p>Tambahkan karyawan pertama untuk memulai</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

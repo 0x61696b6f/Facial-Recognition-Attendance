@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Absensi - Sistem Absensi</title>
+    <link rel="stylesheet" href="/static/css/admin_dashboard.css">
+    <link rel="stylesheet" href="/static/css/laporan_absensi.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-info">
+                <h2>Laporan Absensi</h2>
+                <p>Tanggal: <strong id="current-date">{{ tanggal_str }}</strong></p>
+            </div>
+            <div class="header-actions">
+                <a href="/admin/dashboard" class="back-btn">← Kembali ke Dashboard</a>
+                <form method="post" action="/admin/logout" style="display: inline-block; margin-left: 10px;">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3>Laporan Tanggal</h3>
+                <div class="date-selector">
+                    <form id="dateForm" method="get" action="/admin/laporan">
+                        <input type="date" id="tanggal" name="tanggal" value="{{ tanggal }}" onchange="this.form.submit()" />
+                    </form>
+                </div>
+            </div>
+            
+            <div class="download-options">
+                <a href="/admin/laporan/download?tanggal={{ tanggal }}&type=daily" class="download-btn">
+                    <span class="download-icon">📥</span> Download Laporan Harian
+                </a>
+                <a href="/admin/laporan/download?tanggal={{ tanggal }}&type=monthly" class="download-btn">
+                    <span class="download-icon">📥</span> Download Laporan Bulanan
+                </a>
+            </div>
+            
+            <div class="table-container">
+                <table class="employee-table">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Lokasi</th>
+                            <th>Waktu Absen</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in laporan %}
+                        <tr>
+                            <td>{{ data.nama }}</td>
+                            <td>
+                                {% if data.lokasi %}
+                                <a href="{{ data.maps_url }}" target="_blank" class="location-link" title="Buka di Google Maps">
+                                    {{ data.lokasi }} <span class="map-icon">🗺️</span>
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ data.waktu if data.waktu else 'Belum Absen' }}</td>
+                            <td>
+                                {% if data.status %}
+                                <span class="badge {{ 'badge-success' if data.status == 'Tepat Waktu' else 'badge-warning' }}">
+                                    {{ data.status }}
+                                </span>
+                                {% else %}
+                                <span class="badge badge-danger">Tidak Hadir</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <div class="stat-value">{{ stats.hadir }}</div>
+                    <div class="stat-label">Hadir</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ stats.tepat_waktu }}</div>
+                    <div class="stat-label">Tepat Waktu</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ stats.terlambat }}</div>
+                    <div class="stat-label">Terlambat</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ stats.tidak_hadir }}</div>
+                    <div class="stat-label">Tidak Hadir</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

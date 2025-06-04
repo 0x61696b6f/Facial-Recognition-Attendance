@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Karyawan - Sistem Absensi</title>
+    <link rel="stylesheet" href="/static/css/tambah_karyawan.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h2>Tambah Karyawan Baru</h2>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-card">
+            <form action="/admin/tambah" method="post" enctype="multipart/form-data" id="employeeForm">
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap</label>
+                    <input type="text" id="nama" name="nama" required placeholder="Masukkan nama lengkap karyawan">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nik">NIK (Nomor Induk Karyawan)</label>
+                    <input type="text" id="nik" name="nik" required placeholder="Masukkan NIK karyawan">
+                </div>
+                
+                <div class="form-group">
+                    <label>Foto Wajah Karyawan</label>
+                    <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+                        Upload 3 foto wajah yang jelas untuk training face recognition
+                    </p>
+                    
+                    <!-- Toggle antara upload dan kamera -->
+                    <div class="input-method-toggle">
+                        <button type="button" class="toggle-btn active" id="uploadToggle">Upload File</button>
+                        <button type="button" class="toggle-btn" id="cameraToggle">Gunakan Kamera</button>
+                    </div>
+                    
+                    <!-- File Upload Section -->
+                    <div class="photo-grid" id="uploadSection">
+                        <div class="photo-item">
+                            <h4>Foto Wajah 1</h4>
+                            <div class="file-input-container">
+                                <input type="file" name="face1" class="file-input" accept="image/*" required onchange="updateFileLabel(this, 1)">
+                                <div class="file-input-label" id="label1">
+                                    <div>
+                                        <div class="file-icon">📷</div>
+                                        <div class="file-text">Klik untuk upload foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-item">
+                            <h4>Foto Wajah 2</h4>
+                            <div class="file-input-container">
+                                <input type="file" name="face2" class="file-input" accept="image/*" required onchange="updateFileLabel(this, 2)">
+                                <div class="file-input-label" id="label2">
+                                    <div>
+                                        <div class="file-icon">📷</div>
+                                        <div class="file-text">Klik untuk upload foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-item">
+                            <h4>Foto Wajah 3</h4>
+                            <div class="file-input-container">
+                                <input type="file" name="face3" class="file-input" accept="image/*" required onchange="updateFileLabel(this, 3)">
+                                <div class="file-input-label" id="label3">
+                                    <div>
+                                        <div class="file-icon">📷</div>
+                                        <div class="file-text">Klik untuk upload foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Camera Section -->
+                    <div class="camera-container" id="cameraSection">
+                        <video id="cameraView" autoplay playsinline></video>
+                        
+                        <div class="camera-controls">
+                            <button type="button" class="snapshot-btn" id="startCameraBtn">Mulai Kamera</button>
+                            <button type="button" class="snapshot-btn" id="captureBtn" disabled>Ambil Foto</button>
+                        </div>
+                        
+                        <div class="preview-container">
+                            <div class="preview-item">
+                                <img src="/static/img/placeholder.png" id="preview1">
+                                <div class="preview-label">Foto 1</div>
+                                <button type="button" class="retry-btn" id="retry1" style="display: none;">×</button>
+                                <input type="hidden" name="snapshot1" id="snapshot1">
+                            </div>
+                            <div class="preview-item">
+                                <img src="/static/img/placeholder.png" id="preview2">
+                                <div class="preview-label">Foto 2</div>
+                                <button type="button" class="retry-btn" id="retry2" style="display: none;">×</button>
+                                <input type="hidden" name="snapshot2" id="snapshot2">
+                            </div>
+                            <div class="preview-item">
+                                <img src="/static/img/placeholder.png" id="preview3">
+                                <div class="preview-label">Foto 3</div>
+                                <button type="button" class="retry-btn" id="retry3" style="display: none;">×</button>
+                                <input type="hidden" name="snapshot3" id="snapshot3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="/admin/dashboard" class="btn btn-secondary">Batal</a>
+                    <button type="submit" class="btn btn-primary">Simpan Karyawan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        
+        function updateFileLabel(input, number) {
+            const label = document.getElementById(`label${number}`);
+            const fileName = input.files[0]?.name;
+            
+            if (fileName) {
+                label.classList.add('has-file');
+                label.innerHTML = `
+                    <div>
+                        <div class="file-icon">✅</div>
+                        <div class="file-text">${fileName}</div>
+                    </div>
+                `;
+            } else {
+                label.classList.remove('has-file');
+                label.innerHTML = `
+                    <div>
+                        <div class="file-icon">📷</div>
+                        <div class="file-text">Klik untuk upload foto</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Variabel untuk menyimpan stream kamera dan status pengambilan foto
+        let stream;
+        let currentCaptureIndex = 0;
+        let capturedPhotos = [false, false, false]; 
+        
+        // Ambil elemen-elemen penting dari DOM
+        const uploadToggle = document.getElementById('uploadToggle');
+        const cameraToggle = document.getElementById('cameraToggle');
+        const uploadSection = document.getElementById('uploadSection');
+        const cameraSection = document.getElementById('cameraSection');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const videoElement = document.getElementById('cameraView');
+        const fileInputs = document.querySelectorAll('.file-input');
+        const employeeForm = document.getElementById('employeeForm');
+        
+        // Event handler untuk toggle ke mode upload file
+        uploadToggle.addEventListener('click', function() {
+            uploadToggle.classList.add('active');
+            cameraToggle.classList.remove('active');
+            uploadSection.style.display = 'grid';
+            cameraSection.style.display = 'none';
+            
+            // Set input file menjadi required
+            fileInputs.forEach(input => {
+                input.required = true;
+            });
+            
+            // Matikan kamera jika sebelumnya aktif
+            stopCamera();
+        });
+        
+        cameraToggle.addEventListener('click', function() {
+            cameraToggle.classList.add('active');
+            uploadToggle.classList.remove('active');
+            cameraSection.style.display = 'block';
+            uploadSection.style.display = 'none';
+            
+            // Set input file menjadi tidak required
+            fileInputs.forEach(input => {
+                input.required = false;
+            });
+        });
+        
+        
+        startCameraBtn.addEventListener('click', async function() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 },
+                        facingMode: "user"
+                    }
+                });
+                videoElement.srcObject = stream;
+                startCameraBtn.disabled = true;
+                captureBtn.disabled = false;
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                alert("Tidak dapat mengakses kamera. Pastikan kamera tersedia dan izin diberikan.");
+            }
+        });
+        
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                startCameraBtn.disabled = false;
+                captureBtn.disabled = true;
+            }
+        }
+        
+        
+        captureBtn.addEventListener('click', function() {
+            if (currentCaptureIndex >= 3) {
+                alert("Anda sudah mengambil 3 foto. Klik tombol 'Simpan Karyawan' atau hapus salah satu foto untuk mengambil ulang.");
+                return;
+            }
+            
+            
+            let nextIndex = -1;
+            for (let i = 0; i < 3; i++) {
+                if (!capturedPhotos[i]) {
+                    nextIndex = i;
+                    break;
+                }
+            }
+            
+            if (nextIndex === -1) return;
+            
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            
+            const previewImg = document.getElementById(`preview${nextIndex + 1}`);
+            const retryBtn = document.getElementById(`retry${nextIndex + 1}`);
+            const snapshotInput = document.getElementById(`snapshot${nextIndex + 1}`);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            previewImg.src = dataUrl;
+            snapshotInput.value = dataUrl;
+            
+            
+            retryBtn.style.display = 'flex';
+            
+            
+            capturedPhotos[nextIndex] = true;
+            currentCaptureIndex++;
+            
+            
+            if (currentCaptureIndex === 3) {
+                captureBtn.disabled = true;
+            }
+        });
+        
+        
+        document.getElementById('retry1').addEventListener('click', function() {
+            resetPhoto(0);
+        });
+        
+        document.getElementById('retry2').addEventListener('click', function() {
+            resetPhoto(1);
+        });
+        
+        document.getElementById('retry3').addEventListener('click', function() {
+            resetPhoto(2);
+        });
+        
+        function resetPhoto(index) {
+            if (capturedPhotos[index]) {
+                
+                document.getElementById(`preview${index + 1}`).src = "/static/img/placeholder.png";
+                document.getElementById(`retry${index + 1}`).style.display = 'none';
+                document.getElementById(`snapshot${index + 1}`).value = '';
+                
+                capturedPhotos[index] = false;
+                currentCaptureIndex--;
+                
+                
+                captureBtn.disabled = false;
+            }
+        }
+        
+        
+        employeeForm.addEventListener('submit', function(e) {
+            if (cameraToggle.classList.contains('active')) {
+                
+                if (currentCaptureIndex < 3) {
+                    e.preventDefault();
+                    alert("Anda harus mengambil 3 foto wajah sebelum menyimpan");
+                    return;
+                }
+            }
+        });
+        
+        
+        window.addEventListener('beforeunload', function() {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>
