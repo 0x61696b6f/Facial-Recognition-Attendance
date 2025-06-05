@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistem Absensi Karyawan berbasis Face Recognition. Lakukan absensi otomatis dengan kamera dan deteksi lokasi. Mudah, cepat, dan akurat.">
+    <meta name="keywords" content="absensi, face recognition, absensi karyawan, sistem absensi, absensi online, deteksi wajah, absensi otomatis, absensi lokasi">
     <title>Sistem Absensi - Face Recognition</title>
     <link rel="stylesheet" href="/static/css/absensi.css">
 </head>
 
 <body>
-    <div class="header">
+    <header class="header">
         <h1>🔍 Sistem Absensi Face Recognition</h1>
         <p>Silakan posisikan wajah di dalam frame untuk melakukan absensi</p>
-    </div>
+    </header>
 
     <div class="container">
         <div class="info-cards">
@@ -68,7 +70,8 @@
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
         let currentLocation = 'Unknown';
-        
+        let cameraStream = null; // Tambahkan variabel untuk menyimpan stream kamera
+
         // Fungsi untuk update waktu saat ini setiap detik
         function updateTime() {
             const now = new Date();
@@ -100,28 +103,54 @@
         }
 
         
-        document.getElementById('startCamera').addEventListener('click', async function() {
+        // Fungsi untuk menyalakan kamera
+        async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { width: 640, height: 480 } 
                 });
-                video.srcObject = stream;
-                
+                video.srcObject = cameraStream;
                 video.addEventListener('loadedmetadata', () => {
                     document.getElementById('absenBtn').disabled = false;
-                    this.textContent = '📹 Kamera Aktif';
-                    this.disabled = true;
                     showStatus('✅ Kamera berhasil diaktifkan. Silakan posisikan wajah di dalam frame dan klik "Absen Sekarang"', 'info');
-                });
-                
+                }, { once: true });
                 getLocation();
-                
             } catch (err) {
                 showStatus('❌ Error: Tidak dapat mengakses kamera. ' + err.message, 'error');
             }
+        }
+
+        // Fungsi untuk mematikan kamera
+        function stopCamera() {
+            if (cameraStream) {
+                let tracks = cameraStream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+                cameraStream = null;
+                document.getElementById('absenBtn').disabled = true;
+                showStatus('📴 Kamera dimatikan.', 'info');
+            }
+        }
+
+        // Toggle kamera saat tombol diklik
+        const startCameraBtn = document.getElementById('startCamera');
+        let cameraOn = false;
+        startCameraBtn.addEventListener('click', async function() {
+            if (!cameraOn) {
+                await startCamera();
+                startCameraBtn.textContent = '📴 Matikan Kamera';
+                startCameraBtn.classList.remove('btn-primary');
+                startCameraBtn.classList.add('btn-danger');
+                cameraOn = true;
+            } else {
+                stopCamera();
+                startCameraBtn.textContent = '📹 Mulai Kamera';
+                startCameraBtn.classList.remove('btn-danger');
+                startCameraBtn.classList.add('btn-primary');
+                cameraOn = false;
+            }
         });
 
-        
         document.getElementById('absenBtn').addEventListener('click', async function() {
             document.getElementById('loading').classList.add('show');
             this.disabled = true;
@@ -150,8 +179,7 @@
                         showStatus(`🎉 ${result.message} - Status: ${result.status}`, statusClass);
                         
                         
-                        document.getElementById('absenBtn').textContent = '✅ Sudah Absen';
-                        document.getElementById('absenBtn').disabled = true;
+                        
                     } else {
                         showStatus(`❌ ${result.message}`, 'error');
                         document.getElementById('absenBtn').disabled = false;

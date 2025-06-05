@@ -47,3 +47,4 @@ build/
 *.swp
 
 config.yml
+static/temp/*.jpg

@@ -127,7 +127,7 @@ async def tambah_karyawan(
             
             import base64
             img_data = base64.b64decode(base64_img)
-            img_path = f"static/temp_snapshot_{i}.jpg"
+            img_path = f"static/temp/temp_snapshot_{i}.jpg"
             with open(img_path, "wb") as f:
                 f.write(img_data)
             
@@ -151,7 +151,7 @@ async def tambah_karyawan(
             
         for i, file in enumerate([face1, face2, face3]):
             contents = await file.read()
-            img_path = f"static/temp_face_{i}.jpg"
+            img_path = f"static/temp/temp_face_{i}.jpg"
             with open(img_path, "wb") as f:
                 f.write(contents)
 
@@ -255,7 +255,7 @@ async def update_karyawan(
         embeddings = []
         for i, file in enumerate([face1, face2, face3]):
             contents = await file.read()
-            img_path = f"static/temp_face_{i}.jpg"
+            img_path = f"static/temp/temp_face_{i}.jpg"
             with open(img_path, "wb") as f:
                 f.write(contents)
 
