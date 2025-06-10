@@ -112,65 +112,113 @@ async def tambah_karyawan(
     if not username:
         return RedirectResponse("/login", status_code=302)
 
+    # Debugging information
+    print(f"Processing tambah_karyawan request for: {nama}, NIK: {nik}")
+    print(f"Files received: face1={face1.filename if face1 else None}, face2={face2.filename if face2 else None}, face3={face3.filename if face3 else None}")
+    print(f"Snapshots received: snapshot1={'Yes' if snapshot1 else 'No'}, snapshot2={'Yes' if snapshot2 else 'No'}, snapshot3={'Yes' if snapshot3 else 'No'}")
+
     embeddings = []
     
-    
-    if snapshot1 and snapshot2 and snapshot3:
-        
-        for i, snapshot in enumerate([snapshot1, snapshot2, snapshot3]):
-            
-            if "," in snapshot:
-                base64_img = snapshot.split(",")[1]
-            else:
-                base64_img = snapshot
-                
-            
-            import base64
-            img_data = base64.b64decode(base64_img)
-            img_path = f"static/temp/temp_snapshot_{i}.jpg"
-            with open(img_path, "wb") as f:
-                f.write(img_data)
-            
-            
-            img = np.array(Image.open(img_path).convert("RGB"))
-            faces = face_model.get(img)
-            if not faces:
+    try:
+        if snapshot1 and snapshot2 and snapshot3:
+            print("Processing camera snapshots...")
+            for i, snapshot in enumerate([snapshot1, snapshot2, snapshot3]):
+                try:
+                    if "," in snapshot:
+                        base64_img = snapshot.split(",")[1]
+                    else:
+                        base64_img = snapshot
+                        
+                    import base64
+                    img_data = base64.b64decode(base64_img)
+                    img_path = f"static/temp/temp_snapshot_{i}.jpg"
+                    with open(img_path, "wb") as f:
+                        f.write(img_data)
+                    
+                    img = np.array(Image.open(img_path).convert("RGB"))
+                    faces = face_model.get(img)
+                    if not faces:
+                        print(f"No face detected in snapshot {i+1}")
+                        return templates.TemplateResponse("tambah_karyawan.html", {
+                            "request": request,
+                            "error": f"Wajah {i+1} tidak terdeteksi dalam gambar yang diambil."
+                        })
+                    emb = faces[0].embedding.tolist()
+                    embeddings.append(emb)
+                    print(f"Successfully processed snapshot {i+1}")
+                except Exception as e:
+                    print(f"Error processing snapshot {i+1}: {str(e)}")
+                    return templates.TemplateResponse("tambah_karyawan.html", {
+                        "request": request,
+                        "error": f"Error memproses foto {i+1}: {str(e)}"
+                    })
+        else:
+            print("Processing uploaded files...")
+            if not (face1 and face2 and face3):
+                print("Missing required files")
                 return templates.TemplateResponse("tambah_karyawan.html", {
                     "request": request,
-                    "error": f"Wajah {i+1} tidak terdeteksi dalam gambar yang diambil."
+                    "error": "Mohon upload 3 foto wajah atau gunakan kamera untuk mengambil foto"
                 })
-            emb = faces[0].embedding.tolist()
-            embeddings.append(emb)
-    else:
-        
-        if not (face1 and face2 and face3):
+                
+            for i, file in enumerate([face1, face2, face3]):
+                try:
+                    contents = await file.read()
+                    if not contents:
+                        print(f"Empty file content for file {i+1}")
+                        return templates.TemplateResponse("tambah_karyawan.html", {
+                            "request": request,
+                            "error": f"File foto {i+1} kosong."
+                        })
+                        
+                    img_path = f"static/temp/temp_face_{i}.jpg"
+                    with open(img_path, "wb") as f:
+                        f.write(contents)
+
+                    img = np.array(Image.open(img_path).convert("RGB"))
+                    faces = face_model.get(img)
+                    if not faces:
+                        print(f"No face detected in file {i+1}")
+                        return templates.TemplateResponse("tambah_karyawan.html", {
+                            "request": request,
+                            "error": f"Wajah {i+1} tidak terdeteksi."
+                        })
+                    emb = faces[0].embedding.tolist()
+                    embeddings.append(emb)
+                    print(f"Successfully processed file {i+1}")
+                except Exception as e:
+                    print(f"Error processing file {i+1}: {str(e)}")
+                    return templates.TemplateResponse("tambah_karyawan.html", {
+                        "request": request,
+                        "error": f"Error memproses foto {i+1}: {str(e)}"
+                    })
+
+        # Verify embeddings before calculating average
+        if len(embeddings) != 3:
+            print(f"Expected 3 embeddings, got {len(embeddings)}")
             return templates.TemplateResponse("tambah_karyawan.html", {
                 "request": request,
-                "error": "Mohon upload 3 foto wajah atau gunakan kamera untuk mengambil foto"
+                "error": "Gagal memproses semua foto wajah. Silakan coba lagi."
             })
-            
-        for i, file in enumerate([face1, face2, face3]):
-            contents = await file.read()
-            img_path = f"static/temp/temp_face_{i}.jpg"
-            with open(img_path, "wb") as f:
-                f.write(contents)
-
-            img = np.array(Image.open(img_path).convert("RGB"))
-            faces = face_model.get(img)
-            if not faces:
-                return templates.TemplateResponse("tambah_karyawan.html", {
-                    "request": request,
-                    "error": f"Wajah {i+1} tidak terdeteksi."
-                })
-            emb = faces[0].embedding.tolist()
-            embeddings.append(emb)
-
-    
-    avg_embedding = np.mean(embeddings, axis=0).tolist()
-    user = models.User(nama=nama, nik=nik, face_embedding=json.dumps(avg_embedding))
-    db.add(user)
-    db.commit()
-    return RedirectResponse("/admin/dashboard", status_code=302)
+        
+        print("Calculating average embedding...")
+        avg_embedding = np.mean(embeddings, axis=0).tolist()
+        
+        # Create and save the new user
+        print("Saving user to database...")
+        user = models.User(nama=nama, nik=nik, face_embedding=json.dumps(avg_embedding))
+        db.add(user)
+        db.commit()
+        print(f"User {nama} successfully added with ID {user.id}")
+        
+        return RedirectResponse("/admin/dashboard", status_code=303)  # Changed status code to 303
+    except Exception as e:
+        print(f"Unexpected error in tambah_karyawan: {str(e)}")
+        db.rollback()  # Rollback the transaction if any error occurs
+        return templates.TemplateResponse("tambah_karyawan.html", {
+            "request": request,
+            "error": f"Terjadi kesalahan: {str(e)}"
+        })
 
 
 @router.post("/admin/hapus/{user_id}")

@@ -17,6 +17,13 @@
 
     <div class="container">
         <div class="form-card">
+            <!-- Add error message display -->
+            {% if error %}
+            <div class="alert alert-error">
+                {{ error }}
+            </div>
+            {% endif %}
+            
             <form action="/admin/tambah" method="post" enctype="multipart/form-data" id="employeeForm">
                 <div class="form-group">
                     <label for="nama">Nama Lengkap</label>
@@ -297,14 +304,45 @@
         
         
         employeeForm.addEventListener('submit', function(e) {
+            console.log("Form submission triggered");
+            
             if (cameraToggle.classList.contains('active')) {
-                
+                console.log("Camera mode is active");
                 if (currentCaptureIndex < 3) {
                     e.preventDefault();
                     alert("Anda harus mengambil 3 foto wajah sebelum menyimpan");
+                    console.log("Form submission prevented: Not enough photos");
                     return;
+                } else {
+                    console.log("All photos captured, proceeding with submission");
+                }
+            } else {
+                console.log("Upload mode is active");
+                // Check if all required files are selected
+                const fileInputs = document.querySelectorAll('.file-input[required]');
+                let allFilesSelected = true;
+                
+                fileInputs.forEach(input => {
+                    if (!input.files || input.files.length === 0) {
+                        allFilesSelected = false;
+                    }
+                });
+                
+                if (!allFilesSelected) {
+                    console.log("Form submission prevented: Not all files selected");
+                    alert("Mohon pilih 3 foto wajah sebelum menyimpan");
+                    e.preventDefault();
+                    return;
+                } else {
+                    console.log("All files selected, proceeding with submission");
                 }
             }
+            
+            // Add a loading indicator
+            document.querySelector(".form-actions").insertAdjacentHTML(
+                'beforeend', 
+                '<div id="loading-indicator">Memproses data... Mohon tunggu</div>'
+            );
         });
         
         
@@ -312,5 +350,36 @@
             stopCamera();
         });
     </script>
+    
+    <!-- Add styles for error message and loading indicator -->
+    <style>
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        #loading-indicator {
+            margin-top: 15px;
+            padding: 10px;
+            text-align: center;
+            color: #004085;
+            background-color: #cce5ff;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
 </body>
 </html>

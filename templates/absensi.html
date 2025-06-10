@@ -87,16 +87,19 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
-                        // Jika lokasi berhasil didapatkan, update currentLocation dan tampilkan di UI
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
                         currentLocation = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
                         document.getElementById('location').textContent = currentLocation;
                     },
                     function(error) {
-                        // Jika gagal mendapatkan lokasi, tampilkan pesan error
                         currentLocation = 'Lokasi tidak terdeteksi';
                         document.getElementById('location').textContent = currentLocation;
+                    },
+                    {
+                        enableHighAccuracy: true,  // Request high accuracy
+                        timeout: 5000,            // Wait up to 5 seconds
+                        maximumAge: 0             // Don't use cached position
                     }
                 );
             }
